@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Book List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .book-card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .book-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .book-author {
+            color: #666;
+            margin: 5px 0;
+        }
+        .book-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            background-color: #e0e0e0;
+        }
+        .book-status.read {
+            background-color: #c8e6c9;
+            color: #2e7d32;
+        }
+        .book-status.reading {
+            background-color: #fff9c4;
+            color: #f57f17;
+        }
+        .delete-btn {
+            background-color: #ef5350;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            float: right;
+        }
+        .delete-btn:hover {
+            background-color: #c62828;
+        }
+        .add-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .add-form input, .add-form select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .add-form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-form button:hover {
+            background-color: #388e3c;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>My Book List</h1>
+
+    <div class="add-form">
+        <h3>Add a Book</h3>
+        <label>Title</label>
+        <input type="text" id="title" required>
+        
+        <label>Author</label>
+        <input type="text" id="author" required>
+        
+        <label>Status</label>
+        <select id="status">
+            <option value="unread">Unread</option>
+            <option value="reading">Reading</option>
+            <option value="read">Read</option>
+        </select>
+        
+        <label>Rating (1-5)</label>
+        <input type="number" id="rating" min="1" max="5">
+        
+        <label>Notes</label>
+        <input type="text" id="notes">
+        
+        <button onclick="addBook()">Add Book</button>
+    </div>
+
+    <div id="books-container"></div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        async function loadBooks() {
+            const response = await fetch(`${API_URL}/books`);
+            const books = await response.json();
+            
+            const container = document.getElementById('books-container');
+            container.innerHTML = '';
+            
+            if (books.length === 0) {
+                container.innerHTML = '<p>No books yet. Add one above!</p>';
+                return;
+            }
+            
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteBook(${book.id})">Delete</button>
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-author">by ${book.author}</div>
+                    <span class="book-status ${book.status}">${book.status}</span>
+                    ${book.rating ? ` · Rating: ${book.rating}/5` : ''}
+                    ${book.notes ? `<p>${book.notes}</p>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function addBook() {
+            const book = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                status: document.getElementById('status').value,
+                rating: document.getElementById('rating').value || null,
+                notes: document.getElementById('notes').value || null
+            };
+            
+            if (!book.title || !book.author) {
+                alert('Title and Author are required');
+                return;
+            }
+            
+            await fetch(`${API_URL}/books`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(book)
+            });
+            
+            document.getElementById('title').value = '';
+            document.getElementById('author').value = '';
+            document.getElementById('status').value = 'unread';
+            document.getElementById('rating').value = '';
+            document.getElementById('notes').value = '';
+            
+            loadBooks();
+        }
+
+        async function deleteBook(id) {
+            if (confirm('Delete this book?')) {
+                await fetch(`${API_URL}/books/${id}`, { method: 'DELETE' });
+                loadBooks();
+            }
+        }
+
+        loadBooks();
+    </script>
+</body>
+</html>
