@@ -4,3 +4,4 @@ books.db
 *.pem
 nohup.out
 .env
+.vs/
